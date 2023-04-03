@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Methane Chart</title>
+    <script src="/static/chart.js"></script>
+    <script src="/static/bootstrap.min.js"></script>
+    <script src="/static/jquery.min.js"></script>
+    <script src="/static/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="/static/leaflet.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-sm-6">
+                <canvas id="updating-chart"</canvas>
+            </div>
+        </div>
+        <div id="map"></div>
+        <div class="row">
+            <div class="col-sm-6">Methane [ppb]: <div id="methane-value"></div></div>
+            <div class="col-sm-6">
+                <label for="points">Number of points to chart</label>
+                <input type="number" id="points" name="points" value="10">
+            </div>
+        </div>
+    </div>
+</body>
+  <script>
+    var ctx = document.getElementById('updating-chart');
+    var chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: "Methane [ppb]",
+                data: []
+            }]
+        },
+        options: {
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'second'
+                    }
+                }
+            }
+        }
+    });
+
+    var map = L.map('map')
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+   var points = 10;
+
+    $("#points").on('input', function() {
+        points = parseInt($(this).val());
+        console.log(points);
+        chart.data.labels = [];
+        chart.data.datasets[0].data = [];
+        chart.update();
+    });
+
+   let socket = new WebSocket("ws://localhost:8765")
+
+   socket.onmessage = function (e) {
+       let result = $.parseJSON(e.data);
+        if (chart.data.labels.length > points) {
+            chart.data.labels.shift();
+            chart.data.datasets[0].data.shift();
+        }
+
+        chart.data.labels.push(result.GPSTime);
+        chart.data.datasets[0].data.push(result.Methane);
+       console.log(result);
+        $("#methane-value").text(result.Methane);
+
+
+        chart.update();
+
+       let marker = L.marker([result.Latitude, result.Longitude]).addTo(map);
+       marker.bindPopup("<b>Methane [ppb]:</b> " + result.Methane);
+       marker.addTo(map)
+   };
+  </script>
+</html>
