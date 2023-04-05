@@ -16,7 +16,7 @@
                 <canvas id="updating-chart"</canvas>
             </div>
         </div>
-        <div id="map"></div>
+        <!-- <div id="map"></div> -->
         <div class="row">
             <div class="col-sm-6">Methane [ppb]: <div id="methane-value"></div></div>
             <div class="col-sm-6">
@@ -34,7 +34,7 @@
             labels: [],
             datasets: [{
                 label: "Methane [ppb]",
-                data: []
+                data: [],
             }]
         },
         options: {
@@ -42,19 +42,19 @@
                 x: {
                     type: 'time',
                     time: {
-                        unit: 'second'
+                        unit: 'second',
                     }
                 }
             }
         }
     });
 
-    var map = L.map('map')
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(map);
-
+   // var map = L.map('map')
+   // L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+   //     maxZoom: 19,
+   //     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+   // }).addTo(map);
+   //
    var points = 10;
 
     $("#points").on('input', function() {
@@ -65,10 +65,10 @@
         chart.update();
     });
 
-   let socket = new WebSocket("ws://localhost:8765")
+   let socket = new WebSocket("ws://localhost:8080/ws");
 
    socket.onmessage = function (e) {
-       let result = $.parseJSON(e.data);
+        let result = $.parseJSON(e.data);
         if (chart.data.labels.length > points) {
             chart.data.labels.shift();
             chart.data.datasets[0].data.shift();
@@ -76,15 +76,15 @@
 
         chart.data.labels.push(result.GPSTime);
         chart.data.datasets[0].data.push(result.Methane);
-       console.log(result);
+        console.log(result);
         $("#methane-value").text(result.Methane);
 
 
         chart.update();
 
-       let marker = L.marker([result.Latitude, result.Longitude]).addTo(map);
-       marker.bindPopup("<b>Methane [ppb]:</b> " + result.Methane);
-       marker.addTo(map)
+        let marker = L.marker([result.Latitude, result.Longitude]).addTo(map);
+        marker.bindPopup("<b>Methane [ppb]:</b> " + result.Methane);
+        marker.addTo(map);
    };
   </script>
 </html>
